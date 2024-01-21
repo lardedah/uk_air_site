@@ -1,0 +1,9 @@
+Usage
+=====
+
+You can import ``leaflet`` from ``js.leaflet`` and ``need`` it where you want
+these resources to be included on a page::
+
+  >>> from js.leaflet import leaflet
+  >>> leaflet.need()
+
