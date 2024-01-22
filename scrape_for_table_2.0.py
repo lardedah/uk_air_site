@@ -91,11 +91,12 @@ def create_table(year):
         htmlb = urlopen(page_url)
         bsobj = BeautifulSoup(htmlb.read()) # page url as bs obj.
         
-        string = (f'{station_code}_{year}') # I just changed the hard-coded '2023' to {year}. I believe this will work.
+        string = (f'{station_code}_{year}') # I think this can go go gadget.
 
         csv_bsobj = bsobj.find('a', href=re.compile('.*({}).*'.format(year))) # find, not findall, because the year in general is in first table of links.
 
         if not csv_bsobj == None:
+            print("doing something")
 
             csv_link = csv_bsobj.get('href') # url from href tag. the first eligible link on each page is the year's hourly data.
 
@@ -203,7 +204,8 @@ def populate_tables(year):
 
 
 #create_table
-populate_tables(2021)
+for year in range(2000, 2022):
+    populate_tables(year)
 #year_truncate_all_tables
 
 
