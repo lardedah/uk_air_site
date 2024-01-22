@@ -42,6 +42,7 @@ def get_station_codes():
         codes.append(code) # codes is now list of 2-4 character strings
 
     return codes
+    #return codes[148:] # returns COAL onwards.
 
 
 def year_truncate_all_tables(year):
@@ -128,6 +129,8 @@ def populate_tables(year):
     station_codes = get_station_codes()
     for station_code in station_codes: # return object is a list of 2-4 character strings.
 
+        # IF EXISTS? SOME STATION CODES DON'T HAVE ALL YEAR'S DATA FILES. I THINK LINE 142 SHOULD DO THIS. LET'S SEE.
+
         page_url = base_station_url + station_code
         htmlb = urlopen(page_url)
         bsobj = BeautifulSoup(htmlb.read()) # page url as bs obj.
@@ -200,7 +203,7 @@ def populate_tables(year):
 
 
 #create_table
-populate_tables(2022)
+populate_tables(2021)
 #year_truncate_all_tables
 
 
