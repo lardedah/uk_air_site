@@ -3,10 +3,23 @@ import cherrypy
 import pymysql
 import js.leaflet
 from db_query_list import *
+import base64
+from io import BytesIO, StringIO
+import numpy
+import matplotlib.pyplot as plt
+from matplotlib.pyplot import figure
+from db_query_list import get_site_codes
+import os
+from plotter2 import *
 
 
-conn = pymysql.connect(host="127.0.0.1", user="root", passwd="password", db="air")
-cur = conn.cursor()
+
+
+
+
+# conn = pymysql.connect(host="127.0.0.1", user="root", passwd="password", db="air")
+# cur = conn.cursor()
+
 
 
 class site(object):
@@ -22,9 +35,11 @@ class site(object):
           <style>
           body {background-color: powderblue;}
           </style>
+
           <form method="get" action="stations">
           <button type="submit">stations</button>
-          <p>test</p>
+          
+          <p>test</p>          
           </body>
         </html>"""
     
@@ -35,7 +50,13 @@ class site(object):
 
 
         if station > 0:
- 
+            print(station)
+            
+            path = create_plot_for_site("mahg2022", "21-03-2022", "Ozone")
+
+            conn = pymysql.connect(host="127.0.0.1", user="root", passwd="password", db="air")
+
+            cur = conn.cursor()
 
             sql = "SELECT stations.label, stations.category_id, categories.url FROM stations INNER JOIN categories on stations.category_id = categories.category_id WHERE stations.station_id = %s;"
             cur.execute(sql, (str(station)))
@@ -51,6 +72,8 @@ class site(object):
             a = str(station_coord_tuple[0])
             b = str(station_coord_tuple[1])
 
+            cur.close()
+            conn.close()
 
             return ''.join(f'station {station}: longitude = ' + a + ' ' + 'latitude = ' + b) + """<html> 
 
@@ -78,7 +101,11 @@ class site(object):
 
             <div id="map"></div>
 
+
+
             <script>
+
+
 
             """ + f"""
             var map = L.map('map').setView([{a}, {b}], 16);
@@ -98,9 +125,33 @@ class site(object):
 
             """ + """
             
-            tiles.addTo(map);
 
-            </script>
+
+
+
+            </script> 
+
+
+
+
+
+
+
+            """ + f"""
+
+            
+
+
+
+            <img src="/{path}.png" width="640" height="480" border="0">
+            """ + """
+
+            
+
+
+
+
+
 
             <form method="get" action="stations">
             <button type="submit">stations</button>
@@ -112,12 +163,15 @@ class site(object):
 
 
 
-
-
         else:
 
+            conn = pymysql.connect(host="127.0.0.1", user="root", passwd="password", db="air")
+            cur = conn.cursor()
 
             station_id_list = return_station_id_list()
+
+            if os.path.isfile('D:/tom/code/python/tomsite/images/acth2022Ozone11-05-2022.png'):
+                os.remove('D:/tom/code/python/tomsite/images/acth2022Ozone11-05-2022.png')
 
 
             html = """<html>
@@ -146,25 +200,19 @@ class site(object):
             html = html + """</body>
                     </html>"""
 
+            cur.close()
+            conn.close()
 
             return html
-
-
-
-
-
-
-
 
 
 if __name__ == '__main__':
     conf = {
         '/': {
             'tools.sessions.on': True,
+            'tools.staticdir.on': True,
+            'tools.staticdir.dir': os.getcwd() + '/images',
         },
         }
     cherrypy.quickstart(site(), '/', conf)
 
-
-cur.close()
-conn.close()

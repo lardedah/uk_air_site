@@ -18,10 +18,10 @@ cur = conn.cursor()
 # eg csv url https://uk-air.defra.gov.uk/data_files/site_data/MAHG_2023.csv?v=1 # for reference
 
 
-def get_station_codes():
+def get_site_codes():
 
     base_url = 'https://uk-air.defra.gov.uk/latest/currentlevels?view=region'
-    base_station_url = 'https://uk-air.defra.gov.uk/data/flat_files?site_id='
+    base_site_url = 'https://uk-air.defra.gov.uk/data/flat_files?site_id='
 
     htmla = urlopen(base_url)
     bsobj = BeautifulSoup(htmla.read())
@@ -41,21 +41,27 @@ def get_station_codes():
         code = ''.join(composite_tail)
         codes.append(code) # codes is now list of 2-4 character strings
 
-    return codes
-    #return codes[148:] # returns COAL onwards.
+    #return codes
 
 
-def year_truncate_all_tables(year):
+    #print(codes.index("")) # in case of 504. use this to find index of site.
+    return codes[:46] # in case of 504, use this to avoid completed site.
+# get_site_codes() # in case of 504. use this to run above function.
 
-    station_codes = get_station_codes()
-    for code in station_codes:
+
+def year_truncate_tables(year):
+
+    site_codes = get_site_codes()
+    for code in site_codes:
+
         sql = f"TRUNCATE TABLE `{code}{year}`"
         print(sql)
         cur.execute(sql)
         conn.commit()
 
+#year_truncate_tables()
 
-def get_column_labels(csv_link, station_code):
+def get_column_labels(csv_link, site_code):
 
     with urlopen(csv_link) as resource:
         content = resource.read().decode('ascii', 'ignore')
@@ -68,7 +74,7 @@ def get_column_labels(csv_link, station_code):
 
         dictReader = csv.DictReader(file, dialect='excel') # dialect is default excel
 
-        column_labels = [station_code]
+        column_labels = [site_code]
 
         for row in dictReader:
             for key in row.keys():
@@ -81,19 +87,19 @@ def get_column_labels(csv_link, station_code):
 def create_table(year): 
 
     base_url = 'https://uk-air.defra.gov.uk/latest/currentlevels?view=region'
-    base_station_url = 'https://uk-air.defra.gov.uk/data/flat_files?site_id='
+    base_site_url = 'https://uk-air.defra.gov.uk/data/flat_files?site_id='
 
     year = str(year) # if not str, then now str.
-    station_codes = get_station_codes()
-    for station_code in station_codes: # return object is a list of 2-4 character strings.
+    site_codes = get_site_codes()
+    for site_code in site_codes: # return object is a list of 2-4 character strings.
 
-        page_url = base_station_url + station_code
+        page_url = base_site_url + site_code
         htmlb = urlopen(page_url)
         bsobj = BeautifulSoup(htmlb.read()) # page url as bs obj.
         
-        string = (f'{station_code}_{year}') # I think this can go go gadget.
+        string = (f'{site_code}_{year}') # I think this can go go gadget.
 
-        csv_bsobj = bsobj.find('a', href=re.compile('.*({}).*'.format(year))) # find, not findall, because the year in general is in first table of links.
+        csv_bsobj = bsobj.find('a', href=re.compile('.*({}).*'.format(year))) # find, not findall, because the year csv file is always in the first table of links.
 
         if not csv_bsobj == None:
             print("doing something")
@@ -101,17 +107,17 @@ def create_table(year):
             csv_link = csv_bsobj.get('href') # url from href tag. the first eligible link on each page is the year's hourly data.
 
             with urlopen(csv_link) as resource:
-                column_labels = [station_code]
-                column_labels = get_column_labels(csv_link, station_code)
+                column_labels = [site_code]
+                column_labels = get_column_labels(csv_link, site_code)
                 
                 arg_counter = 0
 
                 sql = "CREATE TABLE IF NOT EXISTS `" + column_labels[0] + year + "`("
 
-                for label in range((len(column_labels) -2)):                                            # can change f strings over to concatenation. or not. reduce methods used and improve this sql construction loop.
+                for label in range((len(column_labels) -2)):                            # can change f strings over to concatenation. or not. reduce methods used and improve this sql construction loop.
                     sql = sql + f"`{column_labels[(arg_counter + 1)]}` varchar(150), "
                     arg_counter += 1
-                print(station_code) # show code before sql execute
+                print(site_code) # show code before sql execute
                 print(sql) # show full sql before sql execute
                 sql = sql + f"`{column_labels[-1]}` varchar(150));" 
 
@@ -124,25 +130,25 @@ def create_table(year):
 def populate_tables(year):
 
     base_url = 'https://uk-air.defra.gov.uk/latest/currentlevels?view=region'
-    base_station_url = 'https://uk-air.defra.gov.uk/data/flat_files?site_id='
+    base_site_url = 'https://uk-air.defra.gov.uk/data/flat_files?site_id='
 
     year = str(year) # if not str, then str.
-    station_codes = get_station_codes()
-    for station_code in station_codes: # return object is a list of 2-4 character strings.
+    site_codes = get_site_codes()
+    for site_code in site_codes: # return object is a list of 2-4 character strings.
 
-        # IF EXISTS? SOME STATION CODES DON'T HAVE ALL YEAR'S DATA FILES. I THINK LINE 142 SHOULD DO THIS. LET'S SEE.
+        # IF EXISTS? SOME site CODES DON'T HAVE ALL YEAR'S DATA FILES. I THINK BELOW 'IF' SHOULD DO THIS. LET'S SEE.
 
-        page_url = base_station_url + station_code
+        page_url = base_site_url + site_code
         htmlb = urlopen(page_url)
         bsobj = BeautifulSoup(htmlb.read()) # page url as bs obj.
         
-        string = (f'{station_code}_{year}') # I just changed the hard-coded '2023' to {year}. I believe this will work.
+        string = (f'{site_code}_{year}') # I just changed the hard-coded '2023' to {year}. I believe this will work.
 
         csv_bsobj = bsobj.find('a', href=re.compile('.*({}).*'.format(year))) # find, not findall, because the year in general is in first table of links.
 
         if not csv_bsobj == None: # checks for None type returned in the case of no results found by .find
 
-            csv_link = csv_bsobj.get('href') # url from href tag. the first eligible link on each station page is the year's hourly data.
+            csv_link = csv_bsobj.get('href') # url from href tag. the first eligible link on each site page is the year's hourly data.
             
             with urlopen(csv_link) as resource: # csv file is now open.
                                
@@ -194,7 +200,7 @@ def populate_tables(year):
 
                     
 
-                    sql = f"INSERT INTO `{station_code.lower()}{year.lower()}` ({', '.join(clean_columns)}) VALUES ({', '.join(clean_values)});"
+                    sql = f"INSERT INTO `{site_code.lower()}{year.lower()}` ({', '.join(clean_columns)}) VALUES ({', '.join(clean_values)});"
                     print(sql)
                     cur.execute(sql)
                     conn.commit()
@@ -204,9 +210,10 @@ def populate_tables(year):
 
 
 #create_table
-for year in range(2000, 2022):
-    populate_tables(year)
-#year_truncate_all_tables
+
+populate_tables(2023) # BEFORE CALLING: VERIFY 'RETURN CODES' RETURN VALUE. 
+
+
 
 
 cur.close()
