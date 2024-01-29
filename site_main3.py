@@ -45,15 +45,40 @@ class site(object):
     
 
     @cherrypy.expose
-    def stations(self, station=0): # will recieve args for plot.
+    def stations(self, station=0, plot=''): # will recieve args for plot.
         station = int(station) 
+
+        if plot == '':
+            file_path = 'choose'
+        elif not plot == '':
+            querymule = [string for string in plot.split('$')]
+            table = querymule[0]
+            date = querymule[1]
+            pollutant = querymule[2]
+            file_path = create_plot_for_site(table, date, pollutant)
+
 
 
         if station > 0:
-            print(station)
-            
-            path = create_plot_for_site("mahg2022", "21-03-2022", "Ozone") # REQUIRED TO BE INPUT DEPENDANT
-            # menu for each argument and then 'go' button to refresh page (load page and pass arguments to page-function's parameters) with station's year-table/date/pollutant info.
+
+
+
+
+
+
+
+
+
+            # need ability to select page parameters. used for plot function arguments.
+
+
+
+
+
+
+
+
+
 
             conn = pymysql.connect(host="127.0.0.1", user="root", passwd="password", db="air")
 
@@ -124,35 +149,11 @@ class site(object):
 
             marker.bindPopup("<b>{station_label}</b><br>EIONET pollutant category {category_id} @  <a href='{category_url}' target = '_blank'>(new page)</a> ").openPopup();
 
-            """ + """
-            
-
-
-
-
-            </script> 
-
-
-
-
-
-
-
+            </script>
             """ + f"""
-
-            
-
-
-
-            <img src="/{path}.png" width="640" height="480" border="0">
+            <img src="/{file_path}.png" width="640" height="480" border="0">
             """ + """
-
-            
-
-
-
-
-
+   
 
             <form method="get" action="stations">
             <button type="submit">stations</button>
@@ -174,8 +175,11 @@ class site(object):
 
             files = 'D:/tom/code/python/tomsite/images/'
             for filename in os.listdir(files):
-                file_path = os.path.join(files, filename)
-                os.unlink(file_path)
+                if not filename == 'choose.png':
+                    path = os.path.join(files, filename)
+                    os.unlink(path)
+
+                    
 
 
             html = """<html>

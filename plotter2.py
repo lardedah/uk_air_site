@@ -9,8 +9,6 @@ import os
 
 
 
-
-
 def create_plot_for_site(table, date, pollutant):
 
     conn = pymysql.connect(host="127.0.0.1", user="root", passwd="password", db="air")
@@ -24,6 +22,7 @@ def create_plot_for_site(table, date, pollutant):
 
     times = []
     readings = []
+
 
 # check if record found for pollutant, populate list of axis labels, verify that records exist.
     pollutant_record_found = False
